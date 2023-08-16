@@ -8,6 +8,7 @@ struct Stazione {
     struct Stazione *next;
     struct Stazione *prev;
 };
+
 /*
 struct Stazione *trovaStazione(struct Stazione **testa, struct Stazione **coda, int km) {
     if ((*testa)->km == km)
@@ -57,9 +58,9 @@ void insStazione(struct Stazione **testa, struct Stazione **coda, int km) {
         while (temp->next != NULL && temp->next->km < newStazione->km) {
             temp = temp->next;
         }
-        if (temp->km == newStazione->km) {
+        if (temp->next != NULL && temp->next->km == newStazione->km) {
             printf("non aggiunta\n");
-            //free(newStazione);
+            free(newStazione);
         } else {
             newStazione->next = temp->next;
 
@@ -73,7 +74,6 @@ void insStazione(struct Stazione **testa, struct Stazione **coda, int km) {
             printf("aggiunta\n");
         }
     }
-    free(temp);
 }
 
 void delStazione(struct Stazione **testa, struct Stazione **coda, int km) {
@@ -86,27 +86,37 @@ void delStazione(struct Stazione **testa, struct Stazione **coda, int km) {
         printf("non demolita");
         return;
     }
-    struct Stazione *temp = (struct Stazione *) malloc(sizeof(struct Stazione));
-    struct Stazione *del_stazione = (struct Stazione *) malloc(sizeof(struct Stazione));
-    temp = *testa;
 
-    while (temp->next != NULL) {
-        temp = temp->next;
-        if (temp->km == km){
-            del_stazione=temp;
-            free(temp);
+    int demolito = 0;
+    struct Stazione *del_stazione = (struct Stazione *) malloc(sizeof(struct Stazione));
+
+    if ((*testa)->km == km) {
+        (*testa)->next->prev = NULL;
+        *testa = (*testa)->next;
+        demolito = 1;
+    }
+    if ((*coda)->km == km) {
+        (*coda)->prev->next = NULL;
+        *coda = (*coda)->prev;
+        demolito = 1;
+    }
+
+    if (demolito == 0) {
+
+        del_stazione = *testa;
+
+        while (del_stazione->next != NULL && demolito == 0) {
+            del_stazione = del_stazione->next;
+            if (del_stazione->km == km) {
+                demolito = 1;
+            }
         }
     }
 
-    if (*testa == NULL || del_stazione == NULL) {
+    if (*testa == NULL || demolito == 0) {
         printf("non demolita\n");
         return;
     }
-
-    if (*testa == del_stazione)
-        *testa = del_stazione->next;
-    if (*coda == del_stazione)
-        *coda = del_stazione->prev;
 
     if (del_stazione->next != NULL) {
         del_stazione->next->prev = del_stazione->prev;
@@ -143,7 +153,17 @@ int main() {
 
     insStazione(&testa, &coda, 19);
 
-    delStazione(&testa, &coda, 3);
+    insStazione(&testa, &coda, 19);
+
+    delStazione(&testa, &coda, 1);
+
+    delStazione(&testa, &coda, 8);
+
+    delStazione(&testa, &coda, 8);
+
+    insStazione(&testa, &coda, 8);
+
+    delStazione(&testa, &coda, 8);
 
 }
 
