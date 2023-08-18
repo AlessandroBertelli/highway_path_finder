@@ -4,40 +4,17 @@
 struct Stazione {
     int km;
     int numMacchine;
-    int macchine;
+    int *macchine;
     struct Stazione *next;
     struct Stazione *prev;
 };
 
-/*
-struct Stazione *trovaStazione(struct Stazione **testa, struct Stazione **coda, int km) {
-    if ((*testa)->km == km)
-        return (*testa);
-    if ((*testa)->km > km)
-        return NULL;
-    if ((*coda)->km == km)
-        return (*coda);
-    if ((*coda)->km < km) {
-        return NULL;
-    }
-
-    struct Stazione *temp = (struct Stazione *) malloc(sizeof(struct Stazione));
-    temp = *testa;
-
-    while (temp->next != NULL) {
-        temp = temp->next;
-        if (temp->km == km){
-            free(temp);
-            return ;
-        }
-    }
-    return NULL;
-}*/
-
-void insStazione(struct Stazione **testa, struct Stazione **coda, int km) {
+void insStazione(struct Stazione **testa, struct Stazione **coda, int km, int numMacchine, int *macchine) {
 
     struct Stazione *newStazione = (struct Stazione *) malloc(sizeof(struct Stazione));
     newStazione->km = km;
+    newStazione->numMacchine = numMacchine;
+    newStazione->macchine = macchine;
     newStazione->next = NULL;
     newStazione->prev = NULL;
 
@@ -79,17 +56,16 @@ void insStazione(struct Stazione **testa, struct Stazione **coda, int km) {
 void delStazione(struct Stazione **testa, struct Stazione **coda, int km) {
 
     if ((*testa)->km > km) {
-        printf("non demolita");
+        printf("non demolita\n");
         return;
     }
     if ((*coda)->km < km) {
-        printf("non demolita");
+        printf("non demolita\n");
         return;
     }
 
-    int demolito = 0;
-    struct Stazione *del_stazione = (struct Stazione *) malloc(sizeof(struct Stazione));
-
+    int demolito = 0; //allocare con malloc??????
+    struct Stazione *del_stazione = (struct Stazione *) malloc(sizeof(struct Stazione));;
     if ((*testa)->km == km) {
         (*testa)->next->prev = NULL;
         *testa = (*testa)->next;
@@ -128,42 +104,129 @@ void delStazione(struct Stazione **testa, struct Stazione **coda, int km) {
     printf("demolita\n");
 }
 
-// print the doubly linked list
-void displayList(struct Stazione *Stazione) {
-    struct Stazione *last;
-
-    while (Stazione != NULL) {
-        printf("%d->", Stazione->km);
-        last = Stazione;
-        Stazione = Stazione->next;
+void insMacchina(struct Stazione **testa, struct Stazione **coda, int km, int autonomia) {
+    if ((*testa)->km > km) {
+        printf("non aggiunta\n");
+        return;
     }
-    if (Stazione == NULL)
-        printf("NULL\n");
-}
+    if ((*coda)->km < km) {
+        printf("non aggiunta\n");
+        return;
+    }
 
+    struct Stazione *stazione = (struct Stazione *) malloc(sizeof(struct Stazione));
+    stazione = (*testa);
+
+    while (stazione->next != NULL) {
+        if (stazione->km == km) {
+            break;
+        }
+        stazione = stazione->next;
+    }
+
+    if ((stazione == *coda) && stazione->km != km) {
+        printf("non aggiunta\n");
+        return;
+    }else {
+        if(stazione->numMacchine<512){
+            switch (stazione->numMacchine+1) {
+                case 3:
+                    stazione->macchine = realloc(stazione->macchine, 4 * sizeof(int));
+                case 5:
+                    stazione->macchine = realloc(stazione->macchine, 8 * sizeof(int));
+                    break;
+                case 9:
+                    stazione->macchine = realloc(stazione->macchine, 16 * sizeof(int));
+                    break;
+                case 17:
+                    stazione->macchine = realloc(stazione->macchine, 32 * sizeof(int));
+                    break;
+                case 33:
+                    stazione->macchine = realloc(stazione->macchine, 64 * sizeof(int));
+                    break;
+                case 65:
+                    stazione->macchine = realloc(stazione->macchine, 128 * sizeof(int));
+                    break;
+                case 129:
+                    stazione->macchine = realloc(stazione->macchine, 256 * sizeof(int));
+                    break;
+                case 257:
+                    stazione->macchine = realloc(stazione->macchine, 512 * sizeof(int));
+                    break;
+                default:
+                    break;
+            }
+            stazione->macchine[++stazione->numMacchine] = autonomia;
+            printf("aggiunta\n");
+        }else{
+            printf("non aggiunta\n");
+            return;
+        }
+    }
+}
+/*
+void allocaSpazio(struct Stazione *stazione) {
+    switch ((stazione->numMacchine) + 1) {
+        case 1 ... 4:
+            stazione->macchine = realloc(stazione->macchine, 4 * sizeof(int));
+            break;
+        case 5 ... 8:
+            stazione->macchine = realloc(stazione->macchine, 8 * sizeof(int));
+            break;
+        case 9 ... 16:
+            stazione->macchine = realloc(stazione->macchine, 16 * sizeof(int));
+            break;
+        case 17 ... 32:
+            stazione->macchine = realloc(stazione->macchine, 32 * sizeof(int));
+            break;
+        case 33 ... 64:
+            stazione->macchine = realloc(stazione->macchine, 64 * sizeof(int));
+            break;
+        case 65 ... 128:
+            stazione->macchine = realloc(stazione->macchine, 128 * sizeof(int));
+            break;
+        case 129 ... 256:
+            stazione->macchine = realloc(stazione->macchine, 256 * sizeof(int));
+            break;
+        case 257 ... 512:
+            stazione->macchine = realloc(stazione->macchine, 512 * sizeof(int));
+            break;
+        default:
+            break;
+    }
+}
+*/
 int main() {
     struct Stazione *testa = NULL;
     struct Stazione *coda = NULL;
 
-    insStazione(&testa, &coda, 1);
+    int * test = malloc(4*sizeof (int));
 
-    insStazione(&testa, &coda, 4);
+    test[0] = 3;
+    test[1] = 2;
+    test[2] = 4;
 
-    insStazione(&testa, &coda, 8);
+    int * test2 = malloc(4*sizeof (int));
 
-    insStazione(&testa, &coda, 19);
+    test2[0] = 3;
+    test2[1] = 2;
+    test2[2] = 4;
 
-    insStazione(&testa, &coda, 19);
 
-    delStazione(&testa, &coda, 1);
-
+    insStazione(&testa, &coda, 2,3,test);
     delStazione(&testa, &coda, 8);
+    insStazione(&testa, &coda, 8,3,test2);
+    insMacchina(&testa,&coda,8,56);
+    insMacchina(&testa,&coda,8,34);
 
-    delStazione(&testa, &coda, 8);
+    printf("%d\n",(*testa).next->km);
+    printf("%d\n",(*testa).next->macchine[3]);
+    printf("%d\n",(*testa).next->macchine[4]);
 
-    insStazione(&testa, &coda, 8);
 
-    delStazione(&testa, &coda, 8);
+    free(testa);
+    free(coda);
 
+    //utilizzare magari per macchine una lista?
 }
 
