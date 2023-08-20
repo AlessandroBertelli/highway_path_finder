@@ -1,19 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 int funzCompare (const void * primoEl, const void * secondoEl) {
     return ( *(int*)primoEl - *(int*)secondoEl );
 }
 
 struct Stazione {
-    int km;
-    int numMacchine;
+    unsigned int km;
+    unsigned int numMacchine;
     int *macchine;
     struct Stazione *next;
     struct Stazione *prev;
 };
 
-void insStazione(struct Stazione **testa, struct Stazione **coda, int km, int numMacchine, int **macchine) {
+void insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int km, unsigned int numMacchine, int **macchine) {
 
     struct Stazione *newStazione = (struct Stazione *) malloc(sizeof(struct Stazione));
     newStazione->km = km;
@@ -36,7 +37,6 @@ void insStazione(struct Stazione **testa, struct Stazione **coda, int km, int nu
         printf("aggiunta\n");
     } else {
         temp = *testa;
-
         while (temp->next != NULL && temp->next->km < newStazione->km) {
             temp = temp->next;
         }
@@ -58,7 +58,7 @@ void insStazione(struct Stazione **testa, struct Stazione **coda, int km, int nu
     }
 }
 
-void delStazione(struct Stazione **testa, struct Stazione **coda, int km) {
+void delStazione(struct Stazione **testa, struct Stazione **coda, unsigned int km) {
 
     if ((*testa)->km > km) {
         printf("non demolita\n");
@@ -69,7 +69,7 @@ void delStazione(struct Stazione **testa, struct Stazione **coda, int km) {
         return;
     }
 
-    int demolito = 0; //allocare con malloc??????
+    unsigned int demolito = 0; //allocare con malloc??????
     struct Stazione *del_stazione = (struct Stazione *) malloc(sizeof(struct Stazione));;
     if ((*testa)->km == km) {
         (*testa)->next->prev = NULL;
@@ -109,7 +109,7 @@ void delStazione(struct Stazione **testa, struct Stazione **coda, int km) {
     printf("demolita\n");
 }
 
-void insMacchina(struct Stazione **testa, struct Stazione **coda, int km, int autonomia) {
+void insMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int km, unsigned int autonomia) {
     if ((*testa)->km > km) {
         printf("non aggiunta\n");
         return;
@@ -162,7 +162,7 @@ void insMacchina(struct Stazione **testa, struct Stazione **coda, int km, int au
                 default:
                     break;
             }
-            int i = stazione->numMacchine - 1;
+            unsigned int i = stazione->numMacchine - 1;
             while (i >= 0 && stazione->macchine[i] > autonomia) {
                 stazione->macchine[i + 1] = stazione->macchine[i];
                 i--;
@@ -177,7 +177,7 @@ void insMacchina(struct Stazione **testa, struct Stazione **coda, int km, int au
     }
 }
 
-void delMacchina(struct Stazione **testa, struct Stazione **coda, int km, int autonomia) {
+void delMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int km, unsigned int autonomia) {
     if ((*testa)->km > km) {
         printf("non rottamata\n");
         return;
@@ -221,42 +221,54 @@ int main() {
 
     struct Stazione *testa = NULL;
     struct Stazione *coda = NULL;
+    //char* comando = (char*) malloc(33 * sizeof (char));
+    int * test = (int*) malloc(5*sizeof (int));
+    test[1] = 3;
+    test[0] = 2;
 
-    int *test = (int *) malloc(4 * sizeof(int));
+    insStazione(&testa,&coda,5,2,&test);
+    insStazione(&testa,&coda,5,2,&test);
 
-    test[0] = 34;
-    test[1] = 21;
-    test[2] = 54;
+    insStazione(&testa,&coda,5,2,&test);
 
-    int *test2 = (int *) malloc(4 * sizeof(int));
+    /*while(scanf("%s", comando) != EOF){
+        if (strcmp(comando, "aggiungi-stazione") == 0)
+        {
+            unsigned int distanza, numAuto;
+            scanf("%u %u", &distanza,&numAuto);
+            int * macchine = (int*) malloc(numAuto*sizeof (int));
+            for (int i = 0; i < numAuto; ++i) {
+                scanf("%d", &macchine[i]);
+            }
+            for (int i = 0; i < numAuto; ++i) {
+                printf("%u",macchine[i]);
+            }
+            insStazione(&testa,&coda, distanza, numAuto, &macchine);
+        }
+        else if (strcmp(comando, "demolisci-stazione") == 0)
+        {
+            // do something else
+        }
+        else if (strcmp(comando, "aggiungi-auto") == 0)
+        {
+            // do something else
+        }
+        else if (strcmp(comando, "rottama-auto") == 0)
+        {
+            // do something else
+        }
+        else if (strcmp(comando, "pianifica-percorso") == 0)
+        {
+            // do something else
+        }
+        else if(strcmp(comando, "stampa") == 0){
 
-    test2[0] = 64;
-    test2[1] = 43;
-    test2[2] = 87;
-
-
-    insStazione(&testa, &coda, 2, 3, &test);
-    delStazione(&testa, &coda, 8);
-    insStazione(&testa, &coda, 8, 3, &test2);
-    insMacchina(&testa, &coda, 8, 56);
-    insMacchina(&testa, &coda, 8, 35);
-
-    printf("%d\n", (*testa).next->km);
-    for (int i = 0; i < 5; ++i) {
-        printf("%d\n", (*testa).next->macchine[i]);
-    }
-
-    delMacchina(&testa, &coda, 8, 43);
-    delMacchina(&testa, &coda, 8, 64);
-
-
-    printf("%d\n", (*testa).next->km);
-    for (int i = 0; i < 5; ++i) {
-        printf("%d\n", (*testa).next->macchine[i]);
-    }
-
-
-
+        }
+        else
+        {
+            printf("Input non valido!");
+        }
+    }*/
 
     free(testa);
     free(coda);
