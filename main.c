@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+int funzCompare (const void * primoEl, const void * secondoEl) {
+    return ( *(int*)primoEl - *(int*)secondoEl );
+}
+
 struct Stazione {
     int km;
     int numMacchine;
@@ -9,12 +13,13 @@ struct Stazione {
     struct Stazione *prev;
 };
 
-void insStazione(struct Stazione **testa, struct Stazione **coda, int km, int numMacchine, int *macchine) {
+void insStazione(struct Stazione **testa, struct Stazione **coda, int km, int numMacchine, int **macchine) {
 
     struct Stazione *newStazione = (struct Stazione *) malloc(sizeof(struct Stazione));
     newStazione->km = km;
     newStazione->numMacchine = numMacchine;
-    newStazione->macchine = macchine;
+    newStazione->macchine = *macchine;
+    qsort(newStazione->macchine,numMacchine,sizeof (int), funzCompare);
     newStazione->next = NULL;
     newStazione->prev = NULL;
 
@@ -114,7 +119,7 @@ void insMacchina(struct Stazione **testa, struct Stazione **coda, int km, int au
         return;
     }
 
-    struct Stazione *stazione = (struct Stazione *) malloc(sizeof(struct Stazione));
+    struct Stazione *stazione;
     stazione = (*testa);
 
     while (stazione->next != NULL) {
@@ -127,11 +132,12 @@ void insMacchina(struct Stazione **testa, struct Stazione **coda, int km, int au
     if ((stazione == *coda) && stazione->km != km) {
         printf("non aggiunta\n");
         return;
-    }else {
-        if(stazione->numMacchine<512){
-            switch (stazione->numMacchine+1) {
+    } else {
+        if (stazione->numMacchine < 512) {
+            switch (stazione->numMacchine + 1) {
                 case 3:
                     stazione->macchine = realloc(stazione->macchine, 4 * sizeof(int));
+                    break;
                 case 5:
                     stazione->macchine = realloc(stazione->macchine, 8 * sizeof(int));
                     break;
@@ -156,72 +162,100 @@ void insMacchina(struct Stazione **testa, struct Stazione **coda, int km, int au
                 default:
                     break;
             }
-            stazione->macchine[++stazione->numMacchine] = autonomia;
+            int i = stazione->numMacchine - 1;
+            while (i >= 0 && stazione->macchine[i] > autonomia) {
+                stazione->macchine[i + 1] = stazione->macchine[i];
+                i--;
+            }
+            stazione->macchine[i + 1] = autonomia;
+            stazione->numMacchine++;
             printf("aggiunta\n");
-        }else{
+        } else {
             printf("non aggiunta\n");
             return;
         }
     }
 }
-/*
-void allocaSpazio(struct Stazione *stazione) {
-    switch ((stazione->numMacchine) + 1) {
-        case 1 ... 4:
-            stazione->macchine = realloc(stazione->macchine, 4 * sizeof(int));
+
+void delMacchina(struct Stazione **testa, struct Stazione **coda, int km, int autonomia) {
+    if ((*testa)->km > km) {
+        printf("non rottamata\n");
+        return;
+    }
+    if ((*coda)->km < km) {
+        printf("non rottamata\n");
+        return;
+    }
+
+    struct Stazione *stazione;
+    stazione = (*testa);
+
+    while (stazione->next != NULL) {
+        if (stazione->km == km) {
             break;
-        case 5 ... 8:
-            stazione->macchine = realloc(stazione->macchine, 8 * sizeof(int));
-            break;
-        case 9 ... 16:
-            stazione->macchine = realloc(stazione->macchine, 16 * sizeof(int));
-            break;
-        case 17 ... 32:
-            stazione->macchine = realloc(stazione->macchine, 32 * sizeof(int));
-            break;
-        case 33 ... 64:
-            stazione->macchine = realloc(stazione->macchine, 64 * sizeof(int));
-            break;
-        case 65 ... 128:
-            stazione->macchine = realloc(stazione->macchine, 128 * sizeof(int));
-            break;
-        case 129 ... 256:
-            stazione->macchine = realloc(stazione->macchine, 256 * sizeof(int));
-            break;
-        case 257 ... 512:
-            stazione->macchine = realloc(stazione->macchine, 512 * sizeof(int));
-            break;
-        default:
-            break;
+        }
+        stazione = stazione->next;
+    }
+
+    if ((stazione == *coda) && stazione->km != km) {
+        printf("non rottamata\n");
+        return;
+    } else {
+        int *temp = stazione->macchine;
+        for (int i = 0; i < stazione->numMacchine; ++i) {
+            if(temp[i]==autonomia){
+                for (int j = i; j < stazione->numMacchine; ++j) {
+                    temp[j]=temp[j+1];
+                }
+                stazione->numMacchine--;
+                printf("rottamata\n");
+                break;
+            }
+        }
+
+
     }
 }
-*/
+
 int main() {
+
     struct Stazione *testa = NULL;
     struct Stazione *coda = NULL;
 
-    int * test = malloc(4*sizeof (int));
+    int *test = (int *) malloc(4 * sizeof(int));
 
-    test[0] = 3;
-    test[1] = 2;
-    test[2] = 4;
+    test[0] = 34;
+    test[1] = 21;
+    test[2] = 54;
 
-    int * test2 = malloc(4*sizeof (int));
+    int *test2 = (int *) malloc(4 * sizeof(int));
 
-    test2[0] = 3;
-    test2[1] = 2;
-    test2[2] = 4;
+    test2[0] = 64;
+    test2[1] = 43;
+    test2[2] = 87;
 
 
-    insStazione(&testa, &coda, 2,3,test);
+    insStazione(&testa, &coda, 2, 3, &test);
     delStazione(&testa, &coda, 8);
-    insStazione(&testa, &coda, 8,3,test2);
-    insMacchina(&testa,&coda,8,56);
-    insMacchina(&testa,&coda,8,34);
+    insStazione(&testa, &coda, 8, 3, &test2);
+    insMacchina(&testa, &coda, 8, 56);
+    insMacchina(&testa, &coda, 8, 35);
 
-    printf("%d\n",(*testa).next->km);
-    printf("%d\n",(*testa).next->macchine[3]);
-    printf("%d\n",(*testa).next->macchine[4]);
+    printf("%d\n", (*testa).next->km);
+    for (int i = 0; i < 5; ++i) {
+        printf("%d\n", (*testa).next->macchine[i]);
+    }
+
+    delMacchina(&testa, &coda, 8, 43);
+    delMacchina(&testa, &coda, 8, 64);
+
+
+    printf("%d\n", (*testa).next->km);
+    for (int i = 0; i < 5; ++i) {
+        printf("%d\n", (*testa).next->macchine[i]);
+    }
+
+
 
 
     free(testa);
