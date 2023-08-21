@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-int funzCompare (const void * primoEl, const void * secondoEl) {
-    return ( *(int*)primoEl - *(int*)secondoEl );
+int funzCompare(const void *primoEl, const void *secondoEl) {
+    return (*(int *) primoEl - *(int *) secondoEl);
 }
 
 struct Stazione {
@@ -14,13 +14,14 @@ struct Stazione {
     struct Stazione *prev;
 };
 
-void insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int km, unsigned int numMacchine, int **macchine) {
+void insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int km, unsigned int numMacchine,
+                 int **macchine) {
 
     struct Stazione *newStazione = (struct Stazione *) malloc(sizeof(struct Stazione));
     newStazione->km = km;
     newStazione->numMacchine = numMacchine;
     newStazione->macchine = *macchine;
-    qsort(newStazione->macchine,numMacchine,sizeof (int), funzCompare);
+    //qsort(newStazione->macchine, numMacchine, sizeof(int), funzCompare);
     newStazione->next = NULL;
     newStazione->prev = NULL;
 
@@ -30,6 +31,7 @@ void insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int k
         *testa = newStazione;
         *coda = newStazione;
         printf("aggiunta\n");
+        return;
     } else if ((*testa)->km > newStazione->km) {
         newStazione->next = *testa;
         newStazione->next->prev = newStazione;
@@ -37,6 +39,13 @@ void insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int k
         printf("aggiunta\n");
     } else {
         temp = *testa;
+
+        if (temp->km == km) {
+            printf("non aggiunta\n");
+            free(newStazione);
+            return;
+        }
+
         while (temp->next != NULL && temp->next->km < newStazione->km) {
             temp = temp->next;
         }
@@ -57,6 +66,7 @@ void insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int k
         }
     }
 }
+
 
 void delStazione(struct Stazione **testa, struct Stazione **coda, unsigned int km) {
 
@@ -203,9 +213,9 @@ void delMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int k
     } else {
         int *temp = stazione->macchine;
         for (int i = 0; i < stazione->numMacchine; ++i) {
-            if(temp[i]==autonomia){
+            if (temp[i] == autonomia) {
                 for (int j = i; j < stazione->numMacchine; ++j) {
-                    temp[j]=temp[j+1];
+                    temp[j] = temp[j + 1];
                 }
                 stazione->numMacchine--;
                 printf("rottamata\n");
@@ -221,16 +231,17 @@ int main() {
 
     struct Stazione *testa = NULL;
     struct Stazione *coda = NULL;
-    //char* comando = (char*) malloc(33 * sizeof (char));
-    int * test = (int*) malloc(5*sizeof (int));
+    char* comando = (char*) malloc(33 * sizeof (char));
+    int *test = (int *) malloc(5 * sizeof(int));
     test[1] = 3;
     test[0] = 2;
 
-    insStazione(&testa,&coda,5,2,&test);
-    insStazione(&testa,&coda,5,2,&test);
+    insStazione(&testa, &coda, 5, 2, &test);
+    insStazione(&testa, &coda, 5, 2, &test);
 
-    insStazione(&testa,&coda,5,2,&test);
+    insStazione(&testa, &coda, 4, 2, &test);
 
+    delStazione(&testa, &coda, 4);
     /*while(scanf("%s", comando) != EOF){
         if (strcmp(comando, "aggiungi-stazione") == 0)
         {
