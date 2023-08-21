@@ -40,7 +40,7 @@ void insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int k
     } else {
         temp = *testa;
 
-        if (temp->km == km) {
+        if (temp->km == km && ((*testa) == (*coda))) {
             printf("non aggiunta\n");
             free(newStazione);
             return;
@@ -70,23 +70,31 @@ void insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int k
 
 void delStazione(struct Stazione **testa, struct Stazione **coda, unsigned int km) {
 
-    if ((*testa)->km > km) {
+    if ((*coda) == NULL || (*testa) == NULL) {
         printf("non demolita\n");
         return;
-    }
-    if ((*coda)->km < km) {
+    } else if ((*testa)->km > km) {
+        printf("non demolita\n");
+        return;
+    } else if ((*coda)->km < km) {
         printf("non demolita\n");
         return;
     }
 
     unsigned int demolito = 0; //allocare con malloc??????
-    struct Stazione *del_stazione = (struct Stazione *) malloc(sizeof(struct Stazione));;
-    if ((*testa)->km == km) {
+    struct Stazione *del_stazione = (struct Stazione *) malloc(sizeof(struct Stazione));
+
+    if ((*testa) == (*coda)) {
+        *testa = NULL;
+        *coda = NULL;
+        free(del_stazione);
+        printf("demolita\n");
+        return;
+    } else if ((*testa)->next != NULL && (*testa)->km == km) {
         (*testa)->next->prev = NULL;
         *testa = (*testa)->next;
         demolito = 1;
-    }
-    if ((*coda)->km == km) {
+    } else if ((*coda)->km == km) {
         (*coda)->prev->next = NULL;
         *coda = (*coda)->prev;
         demolito = 1;
@@ -231,42 +239,49 @@ int main() {
 
     struct Stazione *testa = NULL;
     struct Stazione *coda = NULL;
-    char* comando = (char*) malloc(33 * sizeof (char));
-    int *test = (int *) malloc(5 * sizeof(int));
+    char *comando = (char *) malloc(33 * sizeof(char));
+
+    /*int *test = (int *) malloc(5 * sizeof(int));
     test[1] = 3;
     test[0] = 2;
 
-    insStazione(&testa, &coda, 5, 2, &test);
-    insStazione(&testa, &coda, 5, 2, &test);
+    insStazione(&testa, &coda, 0, 2, &test);
+    insStazione(&testa, &coda, 2, 2, &test);
 
     insStazione(&testa, &coda, 4, 2, &test);
 
     delStazione(&testa, &coda, 4);
-    /*while(scanf("%s", comando) != EOF){
+    delStazione(&testa,&coda, 5);
+    */
+
+    while(scanf("%s", comando) != EOF){
         if (strcmp(comando, "aggiungi-stazione") == 0)
         {
-            unsigned int distanza, numAuto;
+            unsigned int distanza = 0, numAuto = 0;
             scanf("%u %u", &distanza,&numAuto);
             int * macchine = (int*) malloc(numAuto*sizeof (int));
             for (int i = 0; i < numAuto; ++i) {
                 scanf("%d", &macchine[i]);
             }
-            for (int i = 0; i < numAuto; ++i) {
-                printf("%u",macchine[i]);
-            }
             insStazione(&testa,&coda, distanza, numAuto, &macchine);
         }
         else if (strcmp(comando, "demolisci-stazione") == 0)
         {
-            // do something else
+            unsigned int distanza = 0;
+            scanf("%u", &distanza);
+            delStazione(&testa,&coda,distanza);
         }
         else if (strcmp(comando, "aggiungi-auto") == 0)
         {
-            // do something else
+            unsigned int distanza = 0, autonomia = 0;
+            scanf("%u %u", &distanza,&autonomia);
+            insMacchina(&testa,&coda,distanza, autonomia);
         }
         else if (strcmp(comando, "rottama-auto") == 0)
         {
-            // do something else
+            unsigned int distanza = 0, autonomia = 0;
+            scanf("%u %u", &distanza,&autonomia);
+            delMacchina(&testa,&coda,distanza,autonomia);
         }
         else if (strcmp(comando, "pianifica-percorso") == 0)
         {
@@ -279,11 +294,14 @@ int main() {
         {
             printf("Input non valido!");
         }
-    }*/
+    }
 
-    free(testa);
-    free(coda);
+    if (testa == coda) {
+        free(testa);
+    } else {
+        free(testa);
+        free(coda);
+    }
 
-    //utilizzare magari per macchine una lista?
 }
 
