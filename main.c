@@ -66,7 +66,7 @@ void insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int k
         }
     }
 }
-
+//
 
 void delStazione(struct Stazione **testa, struct Stazione **coda, unsigned int km) {
 
