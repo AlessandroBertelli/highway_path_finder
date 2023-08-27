@@ -5,3 +5,4 @@ aggiungi-stazione 40 1 60
 aggiungi-stazione 70 1 70
 aggiungi-stazione 100 1 10
 pianifica-percorso 10 70
+pianifica-percorso 10 100
