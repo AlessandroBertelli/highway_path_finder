@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+FILE *fo;
 struct Stazione {
     unsigned int km;
     unsigned int numMacchine;
@@ -9,6 +10,100 @@ struct Stazione {
     struct Stazione *next;
     struct Stazione *prev;
 };
+
+void
+insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int km, unsigned int numMacchine, int **macchine);
+
+void delStazione(struct Stazione **testa, struct Stazione **coda, unsigned int km);
+
+void insMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int km, unsigned int autonomia);
+
+void delMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int km, unsigned int autonomia);
+
+int pianificaRicorsivo(struct Stazione stazione, unsigned int origine);
+
+void pianificaPercorso(const struct Stazione testa, const struct Stazione coda, unsigned int origine,
+                       unsigned int destinazione);
+
+
+int main(int argc, char *argv[]) { //rimuovi argv
+
+    struct Stazione *testa = NULL;
+    struct Stazione *coda = NULL;
+    char *comando = (char *) malloc(33 * sizeof(char));
+
+
+    //rimuovi
+    FILE *fp;
+    fp = fopen(argv[1], "r");
+    if ((fp) == NULL) {
+        fprintf(fo,"Errore nell'apertura del file");
+        exit(1);
+    }
+
+    fo = fopen(argv[2], "wt");
+    if ((fo) == NULL) {
+        fprintf(fo,"Errore nell'apertura del file");
+        exit(1);
+    }
+/*
+
+
+    //rimuovi
+    FILE *fp;
+    fp = fopen("/Users/alessandrobertelli/Downloads/archivio_test_aperti/open_2.txt", "r");
+    if ((fp) == NULL) {
+        fprintf(fo, "Errore nell'apertura del file");
+        exit(1);
+    }
+
+    fo = fopen("/Users/alessandrobertelli/Downloads/archivio_test_aperti/open_2_output.txt", "wt");
+    if ((fo) == NULL) {
+        fprintf(fo, "Errore nell'apertura del file");
+        exit(1);
+    }
+
+*/
+    while (fscanf(fp, "%s", comando) != EOF) {
+        if (strcmp(comando, "aggiungi-stazione") == 0) {
+            unsigned int distanza = 0, numAuto = 0;
+            fscanf(fp, "%u %u", &distanza, &numAuto);
+            int *macchine = (int *) malloc(numAuto * sizeof(int));
+            for (int i = 0; i < numAuto; ++i) {
+                fscanf(fp, "%d", &macchine[i]);
+            }
+            insStazione(&testa, &coda, distanza, numAuto, &macchine);
+        } else if (strcmp(comando, "demolisci-stazione") == 0) {
+            unsigned int distanza = 0;
+            fscanf(fp, "%u", &distanza);
+            delStazione(&testa, &coda, distanza);
+        } else if (strcmp(comando, "aggiungi-auto") == 0) {
+            unsigned int distanza = 0, autonomia = 0;
+            fscanf(fp, "%u %u", &distanza, &autonomia);
+            insMacchina(&testa, &coda, distanza, autonomia);
+        } else if (strcmp(comando, "rottama-auto") == 0) {
+            unsigned int distanza = 0, autonomia = 0;
+            fscanf(fp, "%u %u", &distanza, &autonomia);
+            delMacchina(&testa, &coda, distanza, autonomia);
+        } else if (strcmp(comando, "pianifica-percorso") == 0) {
+            unsigned int origine, destinazione;
+            fscanf(fp, "%u %u", &origine, &destinazione);
+            pianificaPercorso(*testa, *coda, origine, destinazione);
+        } else if (strcmp(comando, "stampa") == 0) {
+
+        } else {
+            fprintf(fo, "Input non valido!");
+        }
+    }
+
+    if (testa == coda) {
+        free(testa);
+    } else {
+        free(testa);
+        free(coda);
+    }
+
+}
 
 void insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int km, unsigned int numMacchine,
                  int **macchine) {
@@ -25,18 +120,18 @@ void insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int k
     if (*testa == NULL) {
         *testa = newStazione;
         *coda = newStazione;
-        printf("aggiunta\n");
+        fprintf(fo, "aggiunta\n");
         return;
     } else if ((*testa)->km > newStazione->km) {
         newStazione->next = *testa;
         newStazione->next->prev = newStazione;
         *testa = newStazione;
-        printf("aggiunta\n");
+        fprintf(fo, "aggiunta\n");
     } else {
         temp = *testa;
 
         if (temp->km == km && ((*testa) == (*coda))) {
-            printf("non aggiunta\n");
+            fprintf(fo, "non aggiunta\n");
             free(newStazione);
             return;
         }
@@ -45,7 +140,7 @@ void insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int k
             temp = temp->next;
         }
         if (temp->next != NULL && temp->next->km == newStazione->km) {
-            printf("non aggiunta\n");
+            fprintf(fo, "non aggiunta\n");
             free(newStazione);
         } else {
             newStazione->next = temp->next;
@@ -57,7 +152,7 @@ void insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int k
             }
             temp->next = newStazione;
             newStazione->prev = temp;
-            printf("aggiunta\n");
+            fprintf(fo, "aggiunta\n");
         }
     }
 }
@@ -66,13 +161,13 @@ void insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int k
 void delStazione(struct Stazione **testa, struct Stazione **coda, unsigned int km) {
 
     if ((*coda) == NULL || (*testa) == NULL) {
-        printf("non demolita\n");
+        fprintf(fo, "non demolita\n");
         return;
     } else if ((*testa)->km > km) {
-        printf("non demolita\n");
+        fprintf(fo, "non demolita\n");
         return;
     } else if ((*coda)->km < km) {
-        printf("non demolita\n");
+        fprintf(fo, "non demolita\n");
         return;
     }
 
@@ -83,7 +178,7 @@ void delStazione(struct Stazione **testa, struct Stazione **coda, unsigned int k
         *testa = NULL;
         *coda = NULL;
         free(del_stazione);
-        printf("demolita\n");
+        fprintf(fo, "demolita\n");
         return;
     } else if ((*testa)->next != NULL && (*testa)->km == km) {
         (*testa)->next->prev = NULL;
@@ -108,7 +203,7 @@ void delStazione(struct Stazione **testa, struct Stazione **coda, unsigned int k
     }
 
     if (*testa == NULL || demolito == 0) {
-        printf("non demolita\n");
+        fprintf(fo, "non demolita\n");
         return;
     }
 
@@ -119,16 +214,16 @@ void delStazione(struct Stazione **testa, struct Stazione **coda, unsigned int k
         del_stazione->prev->next = del_stazione->next;
 
     free(del_stazione);
-    printf("demolita\n");
+    fprintf(fo, "demolita\n");
 }
 
 void insMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int km, unsigned int autonomia) {
     if ((*testa)->km > km) {
-        printf("non aggiunta\n");
+        fprintf(fo, "non aggiunta\n");
         return;
     }
     if ((*coda)->km < km) {
-        printf("non aggiunta\n");
+        fprintf(fo, "non aggiunta\n");
         return;
     }
 
@@ -143,7 +238,7 @@ void insMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int k
     }
 
     if ((stazione == *coda) && stazione->km != km) {
-        printf("non aggiunta\n");
+        fprintf(fo, "non aggiunta\n");
         return;
     } else {
         if (stazione->numMacchine < 512) {
@@ -182,9 +277,9 @@ void insMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int k
             }
             stazione->macchine[i + 1] = autonomia;
             stazione->numMacchine++;
-            printf("aggiunta\n");
+            fprintf(fo, "aggiunta\n");
         } else {
-            printf("non aggiunta\n");
+            fprintf(fo, "non aggiunta\n");
             return;
         }
     }
@@ -192,11 +287,11 @@ void insMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int k
 
 void delMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int km, unsigned int autonomia) {
     if ((*testa)->km > km) {
-        printf("non rottamata\n");
+        fprintf(fo, "non rottamata\n");
         return;
     }
     if ((*coda)->km < km) {
-        printf("non rottamata\n");
+        fprintf(fo, "non rottamata\n");
         return;
     }
 
@@ -211,7 +306,7 @@ void delMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int k
     }
 
     if ((stazione == *coda) && stazione->km != km) {
-        printf("non rottamata\n");
+        fprintf(fo, "non rottamata\n");
         return;
     } else {
         int *temp = stazione->macchine;
@@ -221,7 +316,7 @@ void delMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int k
                     temp[j] = temp[j + 1];
                 }
                 stazione->numMacchine--;
-                printf("rottamata\n");
+                fprintf(fo, "rottamata\n");
                 break;
             }
         }
@@ -231,7 +326,7 @@ void delMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int k
 }
 
 int pianificaRicorsivo(struct Stazione stazione, unsigned int origine) {
-
+    int corretto = 1;
     if (stazione.km != origine) {
         unsigned int destinazione = stazione.km;
         struct Stazione *temp = (struct Stazione *) malloc(sizeof(struct Stazione));
@@ -245,15 +340,19 @@ int pianificaRicorsivo(struct Stazione stazione, unsigned int origine) {
         if (stazione.km == destinazione) {
             return -1;
         }
-        pianificaRicorsivo(stazione, origine);
-        printf("%u ", stazione.km);
+        corretto *= pianificaRicorsivo(stazione, origine);
+        if (corretto == 0) {
+            fprintf(fo, "%u ", stazione.km);
+        }
         free(temp);
+        return corretto;
     } else {
-        return 1;
+        return 0;
     }
 }
 
-void pianificaPercorso( const struct Stazione testa, const struct Stazione coda, unsigned int origine, unsigned int destinazione) {
+void pianificaPercorso(const struct Stazione testa, const struct Stazione coda, unsigned int origine,
+                       unsigned int destinazione) {
     struct Stazione *temp = (struct Stazione *) malloc(sizeof(struct Stazione *));
     *temp = coda;
 
@@ -264,60 +363,6 @@ void pianificaPercorso( const struct Stazione testa, const struct Stazione coda,
         temp = temp->prev;
     }
 
-    (pianificaRicorsivo(*temp, origine) == 1) ? (printf("%u\n", temp->km)) : (printf("nessun percorso\n"));
-}
-
-int main() {
-
-    struct Stazione *testa = NULL;
-    struct Stazione *coda = NULL;
-    char *comando = (char *) malloc(33 * sizeof(char));
-
-    FILE *fp;
-    fp = fopen("/Users/alessandrobertelli/CLionProjects/ProvaFinale/input.txt", "r");
-    if ((fp) == NULL) {
-        printf("Errore nell'apertura del file");
-        exit(1);
-    }
-
-    while (fscanf(fp, "%s", comando) != EOF) {
-        if (strcmp(comando, "aggiungi-stazione") == 0) {
-            unsigned int distanza = 0, numAuto = 0;
-            fscanf(fp, "%u %u", &distanza, &numAuto);
-            int *macchine = (int *) malloc(numAuto * sizeof(int));
-            for (int i = 0; i < numAuto; ++i) {
-                fscanf(fp, "%d", &macchine[i]);
-            }
-            insStazione(&testa, &coda, distanza, numAuto, &macchine);
-        } else if (strcmp(comando, "demolisci-stazione") == 0) {
-            unsigned int distanza = 0;
-            fscanf(fp, "%u", &distanza);
-            delStazione(&testa, &coda, distanza);
-        } else if (strcmp(comando, "aggiungi-auto") == 0) {
-            unsigned int distanza = 0, autonomia = 0;
-            fscanf(fp, "%u %u", &distanza, &autonomia);
-            insMacchina(&testa, &coda, distanza, autonomia);
-        } else if (strcmp(comando, "rottama-auto") == 0) {
-            unsigned int distanza = 0, autonomia = 0;
-            fscanf(fp, "%u %u", &distanza, &autonomia);
-            delMacchina(&testa, &coda, distanza, autonomia);
-        } else if (strcmp(comando, "pianifica-percorso") == 0) {
-            unsigned int origine, destinazione;
-            fscanf(fp, "%u %u", &origine, &destinazione);
-            pianificaPercorso(*testa, *coda, origine, destinazione);
-        } else if (strcmp(comando, "stampa") == 0) {
-
-        } else {
-            printf("Input non valido!");
-        }
-    }
-
-    if (testa == coda) {
-        free(testa);
-    } else {
-        free(testa);
-        free(coda);
-    }
-
+    (pianificaRicorsivo(*temp, origine) == 0) ? (fprintf(fo, "%u\n", temp->km)) : (fprintf(fo, "nessun percorso\n"));
 }
 
