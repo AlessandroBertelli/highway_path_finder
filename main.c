@@ -235,63 +235,102 @@ void delMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int k
     }
 }
 
+int pianificaRicorsivo(struct Stazione stazione, unsigned int origine) {
+
+    /*if (stazione.km == origine) {
+        return;
+    } else {
+
+        unsigned int destinazione = stazione.km;
+
+        while ((destinazione <= (stazione.prev->km + stazione.prev->macchine[stazione.prev->numMacchine - 1]))) {
+            //&&
+            //               (stazione.km != origine)
+            stazione = *stazione.prev;
+        }
+
+        pianificaRicorsivo(stazione, origine);
+
+        printf(" %d", destinazione);
+
+    }*/
+
+    if(stazione.km!=origine){
+        unsigned int destinazione = stazione.km;
+        struct Stazione *temp = (struct Stazione* )malloc(sizeof (struct Stazione));
+        temp=stazione.prev;
+        while(temp!=NULL){
+            if((temp->km + temp->macchine[stazione.prev->numMacchine - 1]) >= destinazione){
+                stazione=*temp;
+            }
+            temp=temp->prev;
+        }
+        if(stazione.km==destinazione){
+            return -1;
+        }
+        pianificaRicorsivo(stazione,origine);
+        printf("%u ", stazione.km);
+    }else{
+        return 1;
+    }
+}
+
+void pianificaPercorso(struct Stazione testa, struct Stazione coda, unsigned int origine, unsigned int destinazione) {
+    struct Stazione *temp = (struct Stazione*) malloc(sizeof (struct Stazione*));
+    *temp=coda;
+
+        while(temp != NULL) {
+            if(temp->km == destinazione) {
+                break;
+            }
+            temp = temp->prev;
+        }
+
+    (pianificaRicorsivo(*temp, origine)==1)?(printf("%u\n",temp->km)):(printf("nessun percorso\n"));
+
+}
+
 int main() {
 
     struct Stazione *testa = NULL;
     struct Stazione *coda = NULL;
     char *comando = (char *) malloc(33 * sizeof(char));
 
-    /*int *test = (int *) malloc(5 * sizeof(int));
-    test[1] = 3;
-    test[0] = 2;
+    FILE* fp;
+    fp=fopen("/Users/alessandrobertelli/CLionProjects/ProvaFinale/input.txt", "r");
+    if((fp)==NULL) {
+        printf("Errore nell'apertura del file");
+        exit(1);
+    }
 
-    insStazione(&testa, &coda, 0, 2, &test);
-    insStazione(&testa, &coda, 2, 2, &test);
-
-    insStazione(&testa, &coda, 4, 2, &test);
-
-    delStazione(&testa, &coda, 4);
-    delStazione(&testa,&coda, 5);
-    */
-
-    while(scanf("%s", comando) != EOF){
-        if (strcmp(comando, "aggiungi-stazione") == 0)
-        {
+    while (fscanf(fp,"%s", comando) != EOF) {
+        if (strcmp(comando, "aggiungi-stazione") == 0) {
             unsigned int distanza = 0, numAuto = 0;
-            scanf("%u %u", &distanza,&numAuto);
-            int * macchine = (int*) malloc(numAuto*sizeof (int));
+            fscanf(fp,"%u %u", &distanza, &numAuto);
+            int *macchine = (int *) malloc(numAuto * sizeof(int));
             for (int i = 0; i < numAuto; ++i) {
-                scanf("%d", &macchine[i]);
+                fscanf(fp,"%d", &macchine[i]);
             }
-            insStazione(&testa,&coda, distanza, numAuto, &macchine);
-        }
-        else if (strcmp(comando, "demolisci-stazione") == 0)
-        {
+            insStazione(&testa, &coda, distanza, numAuto, &macchine);
+        } else if (strcmp(comando, "demolisci-stazione") == 0) {
             unsigned int distanza = 0;
-            scanf("%u", &distanza);
-            delStazione(&testa,&coda,distanza);
-        }
-        else if (strcmp(comando, "aggiungi-auto") == 0)
-        {
+            fscanf(fp,"%u", &distanza);
+            delStazione(&testa, &coda, distanza);
+        } else if (strcmp(comando, "aggiungi-auto") == 0) {
             unsigned int distanza = 0, autonomia = 0;
-            scanf("%u %u", &distanza,&autonomia);
-            insMacchina(&testa,&coda,distanza, autonomia);
-        }
-        else if (strcmp(comando, "rottama-auto") == 0)
-        {
+            fscanf(fp,"%u %u", &distanza, &autonomia);
+            insMacchina(&testa, &coda, distanza, autonomia);
+        } else if (strcmp(comando, "rottama-auto") == 0) {
             unsigned int distanza = 0, autonomia = 0;
-            scanf("%u %u", &distanza,&autonomia);
-            delMacchina(&testa,&coda,distanza,autonomia);
-        }
-        else if (strcmp(comando, "pianifica-percorso") == 0)
-        {
-            // do something else
-        }
-        else if(strcmp(comando, "stampa") == 0){
+            fscanf(fp,"%u %u", &distanza, &autonomia);
+            delMacchina(&testa, &coda, distanza, autonomia);
+        } else if (strcmp(comando, "pianifica-percorso") == 0) {
+            unsigned int origine, destinazione;
+            fscanf(fp,"%u %u", &origine, &destinazione);
+            pianificaPercorso(*testa, *coda, origine, destinazione);
+        } else if (strcmp(comando, "stampa") == 0) {
 
-        }
-        else
-        {
+        } else {
             printf("Input non valido!");
         }
     }

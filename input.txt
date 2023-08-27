@@ -1,0 +1,7 @@
+aggiungi-stazione 10 1 30
+aggiungi-stazione 15 1 70
+aggiungi-stazione 20 1 70
+aggiungi-stazione 40 1 60
+aggiungi-stazione 70 1 70
+aggiungi-stazione 100 1 10
+pianifica-percorso 10 70
