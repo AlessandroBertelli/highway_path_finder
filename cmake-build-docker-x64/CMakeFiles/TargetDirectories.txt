@@ -1,0 +1,3 @@
+/tmp/ProvaFinale/cmake-build-docker-x64/CMakeFiles/rebuild_cache.dir
+/tmp/ProvaFinale/cmake-build-docker-x64/CMakeFiles/edit_cache.dir
+/tmp/ProvaFinale/cmake-build-docker-x64/CMakeFiles/ProvaFinale.dir

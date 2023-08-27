@@ -1,0 +1,4 @@
+/usr/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" -S /tmp/ProvaFinale -B /tmp/ProvaFinale/cmake-build-docker-arm
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /tmp/ProvaFinale/cmake-build-docker-arm
