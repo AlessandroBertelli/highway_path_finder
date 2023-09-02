@@ -31,10 +31,7 @@ void delMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int k
 
 int pianificaRicorsivoDiretto(struct Stazione stazione, unsigned int origine);
 
-//int pianificaRicorsivoInverso(struct Stazione stazione, unsigned int destinazione, unsigned int *tappe,
-//unsigned int *numTappe);
-
-void pianificaInverso(struct Stazione testa, struct Stazione *stazione, unsigned int origine, unsigned int destinazione);
+void pianificaInverso(struct Stazione *stazione, unsigned int origine, unsigned int destinazione);
 
 void pianificaPercorso(struct Stazione testa, struct Stazione coda, unsigned int origine,
                        unsigned int destinazione);
@@ -60,13 +57,13 @@ int main(int argc, char *argv[]) { //rimuovi argv
         }
     } else {
         //rimuovi
-        fp = fopen("/Users/alessandrobertelli/Downloads/archivio_test_aperti/open_28.txt", "r");
+        fp = fopen("/Users/alessandrobertelli/Downloads/archivio_test_aperti/open_49.txt", "r");
         if ((fp) == NULL) {
             fprintf(fo, "Errore nell'apertura del file");
             exit(1);
         }
 
-        fo = fopen("/Users/alessandrobertelli/Downloads/archivio_test_aperti/open_28_output.txt", "wt");
+        fo = fopen("/Users/alessandrobertelli/Downloads/archivio_test_aperti/open_49_output.txt", "wt");
         if ((fo) == NULL) {
             fprintf(fo, "Errore nell'apertura del file");
             exit(1);
@@ -132,7 +129,12 @@ void insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int k
         newStazione->next->prev = newStazione;
         *testa = newStazione;
         fprintf(fo, "aggiunta\n");
-    } else {
+    } else if((*testa)->km==km){
+        fprintf(fo, "non aggiunta\n");
+        free(newStazione);
+        return;
+    }
+    else {
         struct Stazione *temp = (struct Stazione *) malloc(sizeof(struct Stazione));
         temp = *testa;
 
@@ -286,15 +288,7 @@ void insMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int k
                 default:
                     break;
             }
-/*
-            int i = (int) stazione->numMacchine - 1;
-            while (i >= 0 && stazione->macchine[i] > autonomia) {
-                stazione->macchine[i + 1] = stazione->macchine[i];
-                i--;
-            }
-            stazione->macchine[i + 1] = (int) autonomia;
-            stazione->numMacchine++;
-*/
+
             int posizioneInserimento = stazione->numMacchine;
             while (posizioneInserimento > 0 && stazione->macchine[posizioneInserimento - 1] > autonomia) {
                 stazione->macchine[posizioneInserimento] = stazione->macchine[posizioneInserimento - 1];
@@ -383,52 +377,20 @@ int pianificaRicorsivoDiretto(struct Stazione stazione, unsigned int origine) {
         return 0;
     }
 }
-/*
-int
-pianificaRicorsivoInverso(struct Stazione stazione, unsigned int origine, unsigned int *tappe, unsigned int *numTappe) {
-    int corretto = 1;
-    int scarto = INT8_MAX;
-    if (stazione.km != origine) {
-        unsigned int destinazione = stazione.km;
-        struct Stazione *temp = stazione.next;
-        while (temp->km <= origine) {
-            if ((destinazione >= ((temp->km) - (temp->macchine[temp->numMacchine - 1])))) {
-                stazione = *temp;
-            }
-            temp = temp->next;
-            if (temp == NULL) {
-                break;
-            }
-        }
-        if (stazione.km == destinazione) {
-            return -1;
-        }
 
-        (tappe)[(*numTappe)++] = stazione.km;
-
-        corretto *= pianificaRicorsivoInverso(stazione, origine, tappe, numTappe);
-
-
-        while (temp != NULL) {
-            temp = temp->next;
-        }
-        free(temp);
-        return corretto;
-    } else {
-        return 0;
-    }
-}*/
-
-void pianificaInverso(struct Stazione testa, struct Stazione *stazione, unsigned int origine, unsigned int destinazione) {
+void pianificaInverso(struct Stazione *stazione, unsigned int origine, unsigned int destinazione) {
     struct Stazione *temp = malloc(sizeof(struct Stazione));
-
+    stazione=stazione->prev->next; //fatto perche il puntatore dava problemi
     while (stazione->km > destinazione) {
         stazione->raggiungibili = stazione->check = 0;
         temp = stazione->prev;
+        if(stazione->km==5160){
+            int i;
+        }
         while (temp->km >= destinazione) {
             if ((((int) (stazione->km)) - ((int) (stazione->macchine[stazione->numMacchine - 1])) <=
                  (int) (temp->km))) {
-                stazione->raggiungibili++;
+                stazione->raggiungibili+=1;
             }
             temp = temp->prev;
             if (temp == NULL) {
@@ -515,6 +477,6 @@ void pianificaPercorso(const struct Stazione testa, const struct Stazione coda, 
             temp = temp->prev;
         }
 
-        pianificaInverso(testa,temp, origine, destinazione);
+        pianificaInverso(temp, origine, destinazione);
     }
 }
