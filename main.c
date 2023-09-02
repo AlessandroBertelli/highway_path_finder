@@ -228,8 +228,8 @@ void delStazione(struct Stazione **testa, struct Stazione **coda, unsigned int k
 int toAlloc(unsigned int numMacchine){
     if(numMacchine<25){
         return 25;
-    } else if (numMacchine < 50){
-        return 50;
+    } else if (numMacchine < 60){
+        return 60;
     } else if (numMacchine < 125){
         return 125;
     } else if (numMacchine < 200){
@@ -268,9 +268,9 @@ void insMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int k
         if (stazione->numMacchine < 512) {
             switch (stazione->numMacchine + 1) {
                 case 25:
-                    stazione->macchine = realloc(stazione->macchine, 50 * sizeof(int));
+                    stazione->macchine = realloc(stazione->macchine, 60 * sizeof(int));
                     break;
-                case 50:
+                case 60:
                     stazione->macchine = realloc(stazione->macchine, 125 * sizeof(int));
                     break;
                 case 125:
@@ -384,9 +384,7 @@ void pianificaInverso(struct Stazione *stazione, unsigned int origine, unsigned 
     while (stazione->km > destinazione) {
         stazione->raggiungibili = stazione->check = 0;
         temp = stazione->prev;
-        if(stazione->km==5160){
-            int i;
-        }
+
         while (temp->km >= destinazione) {
             if ((((int) (stazione->km)) - ((int) (stazione->macchine[stazione->numMacchine - 1])) <=
                  (int) (temp->km))) {
