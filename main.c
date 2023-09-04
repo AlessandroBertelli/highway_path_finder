@@ -57,13 +57,13 @@ int main(int argc, char *argv[]) { //rimuovi argv
         }
     } else {
         //rimuovi
-        fp = fopen("/Users/alessandrobertelli/Downloads/archivio_test_aperti/open_49.txt", "r");
+        fp = fopen("/Users/alessandrobertelli/Downloads/archivio_test_aperti/open_110.txt", "r");
         if ((fp) == NULL) {
             fprintf(fo, "Errore nell'apertura del file");
             exit(1);
         }
 
-        fo = fopen("/Users/alessandrobertelli/Downloads/archivio_test_aperti/open_49_output.txt", "wt");
+        fo = fopen("/Users/alessandrobertelli/Downloads/archivio_test_aperti/open_110_output.txt", "wt");
         if ((fo) == NULL) {
             fprintf(fo, "Errore nell'apertura del file");
             exit(1);
@@ -129,12 +129,11 @@ void insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int k
         newStazione->next->prev = newStazione;
         *testa = newStazione;
         fprintf(fo, "aggiunta\n");
-    } else if((*testa)->km==km){
+    } else if ((*testa)->km == km) {
         fprintf(fo, "non aggiunta\n");
         free(newStazione);
         return;
-    }
-    else {
+    } else {
         struct Stazione *temp = (struct Stazione *) malloc(sizeof(struct Stazione));
         temp = *testa;
 
@@ -225,16 +224,16 @@ void delStazione(struct Stazione **testa, struct Stazione **coda, unsigned int k
     fprintf(fo, "demolita\n");
 }
 
-int toAlloc(unsigned int numMacchine){
-    if(numMacchine<25){
+int toAlloc(unsigned int numMacchine) {
+    if (numMacchine < 25) {
         return 25;
-    } else if (numMacchine < 60){
+    } else if (numMacchine < 60) {
         return 60;
-    } else if (numMacchine < 125){
+    } else if (numMacchine < 125) {
         return 125;
-    } else if (numMacchine < 200){
+    } else if (numMacchine < 200) {
         return 200;
-    } else if (numMacchine < 300){
+    } else if (numMacchine < 300) {
         return 425;
     } else {
         return 512;
@@ -380,7 +379,7 @@ int pianificaRicorsivoDiretto(struct Stazione stazione, unsigned int origine) {
 
 void pianificaInverso(struct Stazione *stazione, unsigned int origine, unsigned int destinazione) {
     struct Stazione *temp = malloc(sizeof(struct Stazione));
-    stazione=stazione->prev->next; //fatto perche il puntatore dava problemi
+    stazione = stazione->prev->next; //fatto perche il puntatore dava problemi
     while (stazione->km > destinazione) {
         stazione->raggiungibili = stazione->check = 0;
         temp = stazione->prev;
@@ -388,7 +387,7 @@ void pianificaInverso(struct Stazione *stazione, unsigned int origine, unsigned 
         while (temp->km >= destinazione) {
             if ((((int) (stazione->km)) - ((int) (stazione->macchine[stazione->numMacchine - 1])) <=
                  (int) (temp->km))) {
-                stazione->raggiungibili+=1;
+                stazione->raggiungibili += 1;
             }
             temp = temp->prev;
             if (temp == NULL) {
@@ -401,7 +400,7 @@ void pianificaInverso(struct Stazione *stazione, unsigned int origine, unsigned 
     stazione->raggiungibili = 0;
 
     unsigned int contatore = 1;
-    unsigned int *tappe = malloc(100*sizeof(tappe));
+    struct Stazione tappe[100]; //RICORDA DI MODIFICARE e inizializzare
     unsigned int numTappe = 0;
 
     while (stazione->km < origine) {
@@ -411,25 +410,38 @@ void pianificaInverso(struct Stazione *stazione, unsigned int origine, unsigned 
     }
 
     stazione->check = contatore;
-    int prog = 0;
+    int aux = 0;
 
     while (stazione->km > destinazione) {
-        tappe[numTappe++] = stazione->km;
+        tappe[numTappe++] = *stazione;//tappe[numTappe++] = stazione->km;
 
-        prog = stazione->check;
+        if (numTappe > 2) {
+            struct Stazione *candidato = malloc(sizeof(struct Stazione));
+            *candidato = tappe[numTappe - 2];
+            int maxRaggiungibile = (int) ((int) tappe[numTappe - 3].km) -
+                                   ((int) tappe[numTappe - 3].macchine[tappe[numTappe - 3].numMacchine - 1]);
+            while (candidato != stazione) {
+                if ((candidato->km >= maxRaggiungibile) &&
+                    (stazione->km > ((int) candidato->km) - ((int) candidato->macchine[candidato->numMacchine - 1]))) {
+                    tappe[numTappe - 2] = *candidato;
+                }
+                candidato=candidato->prev;
+            }
+        }
+
+        aux = stazione->check;
         temp = stazione->prev;
 
         int nStazRagg = stazione->raggiungibili;
 
         if (nStazRagg == 0 && stazione->km != destinazione) {
             fprintf(fo, "nessun percorso\n");
-            free(tappe);
             return;
         }
 
         for (int i = 0; i < nStazRagg; ++i) {
-            if (prog >= temp->check) {
-                prog = temp->check;
+            if (aux >= temp->check) {
+                aux = temp->check;
                 stazione = temp;
                 temp = temp->prev;
             } else {
@@ -437,13 +449,13 @@ void pianificaInverso(struct Stazione *stazione, unsigned int origine, unsigned 
             }
         }
     }
-    tappe[numTappe+1]=stazione->km;
+    tappe[numTappe + 1] = *stazione;//tappe[numTappe+1]=stazione->km;
 
     for (int i = 0; i < numTappe; ++i) {
-        fprintf(fo, "%u ", tappe[i]);
+        fprintf(fo, "%u ", tappe[i].km);
     }
 
-    fprintf(fo, "%u\n",tappe[numTappe+1]);
+    fprintf(fo, "%u\n", tappe[numTappe + 1].km);
 }
 
 void pianificaPercorso(const struct Stazione testa, const struct Stazione coda, unsigned int origine,
