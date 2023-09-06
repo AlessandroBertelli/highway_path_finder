@@ -9,9 +9,6 @@ struct Stazione {
     unsigned int km;
     unsigned int numMacchine;
     int *macchine;
-    unsigned int raggiungibili;
-    unsigned int check;
-
     unsigned int distanza;
     bool visited;
     struct Stazione *prevBFS;
@@ -48,6 +45,8 @@ void BFS(struct Stazione *testa, struct Stazione *stazDestinazione, unsigned int
 bool
 stampaPercorso(struct Stazione sorgente, struct Stazione destinazione, unsigned int tappe[], unsigned int *numTappe);
 
+unsigned int numStazioni = 0;
+
 int main() {
 
     struct Stazione *testa = NULL;
@@ -83,6 +82,7 @@ int main() {
         } else {
         }
     }
+
     if (testa == coda) {
         free(testa);
     } else {
@@ -91,6 +91,7 @@ int main() {
     }
     free(comando);
     exit(0);
+
 }
 
 void insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int km, unsigned int numMacchine,
@@ -422,7 +423,7 @@ void pianificaPercorso(const struct Stazione testa, const struct Stazione coda, 
         }
 
         BFS(stazDestinazione, stazDestinazione, origine, destinazione);
-        unsigned int tappe[100];
+        unsigned int tappe[1000];
         unsigned int numTappe = 0;
         unsigned int *poNumTappe = &numTappe;
 
@@ -431,7 +432,7 @@ void pianificaPercorso(const struct Stazione testa, const struct Stazione coda, 
             for (int i = numTappe - 1; i > 0; --i) {
                 printf("%u ", tappe[i]);
             }
-            printf("%u\n",tappe[0]);
+            printf("%u\n", tappe[0]);
         }
 
     }
@@ -451,7 +452,7 @@ void BFS(struct Stazione *testa, struct Stazione *stazDestinazione, unsigned int
 
     stazione = testa;
 
-    struct Stazione **queue = malloc(sizeof(struct Stazione) * 100);
+    struct Stazione **queue = malloc(sizeof(struct Stazione) * 30000);
     int fronte = 0, retro = 0;
 
     queue[retro++] = stazione;
@@ -461,6 +462,7 @@ void BFS(struct Stazione *testa, struct Stazione *stazDestinazione, unsigned int
         struct Stazione *temp = analized->next;
 
         while (temp != NULL) {
+
             if (temp->numMacchine > 0) {
                 if (((int) (temp->km)) - ((int) (temp->macchine[temp->numMacchine - 1])) <=
                     (int) (analized->km)) {
@@ -468,7 +470,9 @@ void BFS(struct Stazione *testa, struct Stazione *stazDestinazione, unsigned int
                         temp->visited = true;
                         temp->distanza = analized->distanza + 1;
                         temp->prevBFS = analized;
-                        queue[retro++] = temp;
+                        if (retro < 30000) {
+                            queue[retro++] = temp;
+                        }
                     }
                 }
             }
@@ -476,9 +480,11 @@ void BFS(struct Stazione *testa, struct Stazione *stazDestinazione, unsigned int
         }
         analized->visited = true;
     }
+
 }
 
-bool stampaPercorso(struct Stazione sorgente, struct Stazione destinazione, unsigned int tappe[], unsigned int *numTappe) {
+bool
+stampaPercorso(struct Stazione sorgente, struct Stazione destinazione, unsigned int tappe[], unsigned int *numTappe) {
     if (sorgente.km == destinazione.km) {
         tappe[(*numTappe)++] = sorgente.km;
         return true;
