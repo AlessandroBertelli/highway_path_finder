@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "assert.h"
+#include "stdbool.h"
+
 
 struct Stazione {
     unsigned int km;
@@ -9,6 +11,12 @@ struct Stazione {
     int *macchine;
     unsigned int raggiungibili;
     unsigned int check;
+
+    unsigned int distanza;
+    bool visited;
+    struct Stazione *prevBFS;
+
+
     struct Stazione *next;
     struct Stazione *prev;
 };
@@ -18,7 +26,8 @@ int funzCompare(const void *primoEl, const void *secondoEl) {
 }
 
 void
-insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int km, unsigned int numMacchine, const int macchine[], unsigned int numAuto);
+insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int km, unsigned int numMacchine,
+            const int macchine[], unsigned int numAuto);
 
 void delStazione(struct Stazione **testa, struct Stazione **coda, unsigned int km);
 
@@ -32,8 +41,14 @@ int pianificaRicorsivoDiretto(struct Stazione stazione, unsigned int origine);
 
 void pianificaInverso(struct Stazione *stazione, unsigned int origine, unsigned int destinazione);
 
-void pianificaPercorso(struct Stazione coda, unsigned int origine,
+void pianificaPercorso(struct Stazione testa, struct Stazione coda, unsigned int origine,
                        unsigned int destinazione);
+
+void BFS(struct Stazione *testa, struct Stazione *stazDestinazione, unsigned int origine, unsigned int destinazione);
+
+
+bool
+stampaPercorso(struct Stazione sorgente, struct Stazione destinazione, unsigned int tappe[], unsigned int *numTappe);
 
 int main() {
 
@@ -66,11 +81,10 @@ int main() {
         } else if (strcmp(comando, "pianifica-percorso") == 0) {
             unsigned int origine = 0, destinazione = 0;
             (assert(scanf("%u %u", &origine, &destinazione)));
-            pianificaPercorso(*coda, origine, destinazione);
+            pianificaPercorso(*testa, *coda, origine, destinazione);
         } else {
         }
     }
-
     if (testa == coda) {
         free(testa);
     } else {
@@ -91,9 +105,9 @@ void insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int k
     newStazione->macchine = NULL;
     newStazione->macchine = malloc(toAlloc(numAuto) * sizeof(int));
     for (int i = 0; i < numAuto; i++) {
-        (newStazione->macchine[i]=macchine[i]);
+        (newStazione->macchine[i] = macchine[i]);
     }
-    if(numAuto>0){
+    if (numAuto > 0) {
         qsort(newStazione->macchine, numMacchine, sizeof(int), funzCompare);
     }
     newStazione->next = NULL;
@@ -143,7 +157,7 @@ void insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int k
 
         }
     }
-    newStazione = malloc(sizeof (struct Stazione));
+    newStazione = malloc(sizeof(struct Stazione));
     free(newStazione);
 }
 
@@ -207,7 +221,7 @@ void delStazione(struct Stazione **testa, struct Stazione **coda, unsigned int k
         del_stazione->prev->next = del_stazione->next;
 
     printf("demolita\n");
-    del_stazione= malloc(sizeof (struct Stazione));
+    del_stazione = malloc(sizeof(struct Stazione));
     free(del_stazione);
 }
 
@@ -228,11 +242,11 @@ int toAlloc(unsigned int numMacchine) {
 }
 
 void insMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int km, unsigned int autonomia) {
-    if(*testa == NULL){
+    if (*testa == NULL) {
         printf("non aggiunta\n");
         return;
     }
-    if((*testa)->km > km) {
+    if ((*testa)->km > km) {
         printf("non aggiunta\n");
         return;
     }
@@ -293,7 +307,7 @@ void insMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int k
             return;
         }
     }
-    stazione= malloc(sizeof (struct Stazione));
+    stazione = malloc(sizeof(struct Stazione));
     free(stazione);
 }
 
@@ -382,7 +396,7 @@ void pianificaInverso(struct Stazione *stazione, unsigned int origine, unsigned 
         temp = stazione->prev;
 
         while (temp->km >= destinazione) {
-            if(stazione->numMacchine>0){
+            if (stazione->numMacchine > 0) {
                 if ((((int) (stazione->km)) - ((int) (stazione->macchine[stazione->numMacchine - 1])) <=
                      (int) (temp->km))) {
                     stazione->raggiungibili += 1;
@@ -394,7 +408,7 @@ void pianificaInverso(struct Stazione *stazione, unsigned int origine, unsigned 
             }
         }
         stazione = stazione->prev;
-        if(stazione==NULL)
+        if (stazione == NULL)
             break;
     }
 
@@ -455,14 +469,14 @@ void pianificaInverso(struct Stazione *stazione, unsigned int origine, unsigned 
     printf("%u\n", tappe[numTappe + 1].km);
 }
 
-void pianificaPercorso(const struct Stazione coda, unsigned int origine,
+void pianificaPercorso(const struct Stazione testa, const struct Stazione coda, unsigned int origine,
                        unsigned int destinazione) {
 
     if (destinazione == origine) {
         printf("%u\n", origine);
     } else if (destinazione > origine) {
         struct Stazione *temp = NULL;
-        temp=malloc(sizeof(struct Stazione));
+        temp = malloc(sizeof(struct Stazione));
         *temp = coda;
 
         while (temp != NULL) {
@@ -475,17 +489,105 @@ void pianificaPercorso(const struct Stazione coda, unsigned int origine,
         (pianificaRicorsivoDiretto(*temp, origine) == 0) ? (printf("%u\n", temp->km)) : (printf(
                 "nessun percorso\n"));
     } else {
-        struct Stazione *temp = NULL;
-        temp = malloc(sizeof(struct Stazione));
-        *temp = coda;
-
-        while (temp != NULL) {
-            if (temp->km == origine) {
+        struct Stazione *stazSorgente = NULL;
+        stazSorgente = malloc(sizeof(struct Stazione));
+        struct Stazione *stazDestinazione = NULL;
+        stazDestinazione = malloc(sizeof(struct Stazione));
+        *stazSorgente = testa;
+        *stazDestinazione = coda;
+        while (stazSorgente != NULL) {
+            //if (temp->km == origine) {
+            if (stazSorgente->km == origine) {
                 break;
             }
-            temp = temp->prev;
+            stazSorgente = stazSorgente->next;
+        }
+        while (stazDestinazione != NULL) {
+            //if (temp->km == origine) {
+            if (stazDestinazione->km == destinazione) {
+                break;
+            }
+            stazDestinazione = stazDestinazione->prev;
         }
 
-        pianificaInverso(temp, origine, destinazione);
+        //pianificaInverso(temp, origine, destinazione);
+        //BFS(stazDestinazione, stazDestinazione, origine, destinazione);
+        BFS(stazDestinazione, stazDestinazione, origine, destinazione);
+        unsigned int tappe[100];
+        unsigned int numTappe = 0;
+        unsigned int *poNumTappe = &numTappe;
+
+
+        if (stampaPercorso(*stazSorgente, *stazDestinazione, tappe, poNumTappe)) {
+            for (int i = numTappe - 1; i > 0; --i) {
+                printf("%u ", tappe[i]);
+            }
+            printf("%u\n",tappe[0]);
+        }
+
+    }
+}
+
+void BFS(struct Stazione *testa, struct Stazione *stazDestinazione, unsigned int origine, unsigned int destinazione) {
+
+    struct Stazione *stazione = testa;
+    while (stazione->km<origine) {
+        stazione->visited = false;
+        stazione->distanza = 0;
+        stazione->prevBFS = NULL;
+        stazione = stazione->next;
+        if(stazione==NULL){
+            break;
+        }
+    } //OTTIMIZZAZIONE SU
+    /*while (stazione != NULL) {
+        stazione->visited = false;
+        stazione->distanza = 0;
+        stazione->prevBFS = NULL;
+        stazione = stazione->next;
+
+    }*/
+
+    stazione = testa;
+
+    struct Stazione **queue = malloc(sizeof(struct Stazione) * 100);
+    int fronte = 0, retro = 0;
+
+    queue[retro++] = stazione;
+
+    while (fronte < retro) {
+        struct Stazione *analized = queue[fronte++];
+        struct Stazione *temp = analized->next;
+
+        while (temp != NULL) { //OTTIMIZZARE FINO A ORIGINE
+            if (temp->numMacchine > 0) {
+                if (((int) (temp->km)) - ((int) (temp->macchine[temp->numMacchine - 1])) <=
+                    (int) (analized->km)) {
+                    if (!temp->visited) {
+                        temp->visited = true;
+                        temp->distanza = analized->distanza + 1;
+                        temp->prevBFS = analized;
+                        queue[retro++] = temp;
+                    }
+                }
+            }
+            temp = temp->next;
+        }
+        analized->visited = true;
+    }
+}
+
+bool stampaPercorso(struct Stazione sorgente, struct Stazione destinazione, unsigned int tappe[], unsigned int *numTappe) {
+    if (sorgente.km == destinazione.km) {
+        tappe[(*numTappe)++] = sorgente.km; // Corretto
+        return true;
+    } else if (sorgente.prevBFS == NULL) {
+        printf("nessun percorso\n");
+        return false;
+    } else if (stampaPercorso(*(sorgente.prevBFS), destinazione, tappe, numTappe)) {
+        tappe[(*numTappe)++] = sorgente.km; // Corretto
+        return true;
+    } else {
+        return false;
     }
 }
