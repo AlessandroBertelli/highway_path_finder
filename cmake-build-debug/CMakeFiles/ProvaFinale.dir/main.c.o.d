@@ -80,4 +80,5 @@ CMakeFiles/ProvaFinale.dir/main.c.o: \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/strings.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/secure/_strings.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/secure/_string.h \
-  /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/assert.h
+  /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/assert.h \
+  /Library/Developer/CommandLineTools/usr/lib/clang/14.0.3/include/stdbool.h

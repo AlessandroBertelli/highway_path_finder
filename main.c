@@ -1,9 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include "assert.h"
-#include "stdbool.h"
-
 
 struct Stazione {
     unsigned int km;
@@ -11,48 +10,44 @@ struct Stazione {
     int *macchine;
     unsigned int distanza;
     bool visited;
-    struct Stazione *prevBFS;
-
-
-    struct Stazione *next;
-    struct Stazione *prev;
+    unsigned int proprioIndice;
+    int prevBFS;
 };
 
 int funzCompare(const void *primoEl, const void *secondoEl) {
     return (*(int *) primoEl - *(int *) secondoEl);
 }
 
-void
-insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int km, unsigned int numMacchine,
-            const int macchine[], unsigned int numAuto);
+int binarySearch(struct Stazione stazioni[], int basso, int alto, int km);
 
-void delStazione(struct Stazione **testa, struct Stazione **coda, unsigned int km);
+int ricercaPrecedenteBinario(const struct Stazione stazioni[], unsigned int numStazioni, unsigned int kmGenerico);
+
+void insStazione(struct Stazione stazioni[], unsigned int *numStazioni, unsigned int km, unsigned int numMacchine,
+                 const int macchine[], unsigned int numAuto);
+
+void delStazione(struct Stazione stazioni[], unsigned int *numStazioni, unsigned int km);
 
 int toAlloc(unsigned int numMacchine);
 
-void insMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int km, unsigned int autonomia);
+void insMacchina(struct Stazione stazioni[], unsigned int numStazioni, unsigned int km, unsigned int autonomia);
 
-void delMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int km, unsigned int autonomia);
+void delMacchina(struct Stazione stazioni[], unsigned int numStazioni, unsigned int km, unsigned int autonomia);
 
-int pianificaRicorsivoDiretto(struct Stazione stazione, unsigned int origine);
+int pianificaRicorsivoDiretto(struct Stazione stazioni[], unsigned int numStazioni, unsigned int indiceStazione,
+                              unsigned int origine);
 
-void pianificaPercorso(struct Stazione testa, struct Stazione coda, unsigned int origine,
-                       unsigned int destinazione);
+void pianificaPercorso(struct Stazione stazioni[], unsigned int numStazioni, unsigned int origine,
+                       unsigned int destinazione, int indiceDestinazione);
 
-void BFS(struct Stazione *testa, struct Stazione *stazDestinazione, unsigned int origine, unsigned int destinazione);
+void BFS(struct Stazione stazioni[], unsigned int numStazioni, unsigned int indiceDestinazione, unsigned int origine);
 
-
-bool
-stampaPercorso(struct Stazione sorgente, struct Stazione destinazione, unsigned int tappe[], unsigned int *numTappe);
-
-unsigned int numStazioni = 0;
+bool stampaPercorso(struct Stazione stazioni[], unsigned int numStazioni, unsigned int sorgente,
+                    unsigned int destinazione, unsigned int tappe[], unsigned int *numTappe);
 
 int main() {
-
-    struct Stazione *testa = NULL;
-    struct Stazione *coda = NULL;
-    char *comando = NULL;
-    comando = (char *) malloc(33 * sizeof(char));
+    struct Stazione stazioni[50000];
+    unsigned int numStazioni = 0;
+    char comando[20];
 
     while (scanf("%s", comando) != EOF) {
         if (strcmp(comando, "aggiungi-stazione") == 0) {
@@ -62,46 +57,86 @@ int main() {
             for (int i = 0; i < numAuto; ++i) {
                 (assert(scanf("%d", &macchine[i])));
             }
-            insStazione(&testa, &coda, distanza, numAuto, macchine, numAuto);
+            insStazione(stazioni, &numStazioni, distanza, numAuto, macchine, numAuto);
         } else if (strcmp(comando, "demolisci-stazione") == 0) {
             unsigned int distanza = 0;
             (assert(scanf("%u", &distanza)));
-            delStazione(&testa, &coda, distanza);
+            delStazione(stazioni, &numStazioni, distanza);
         } else if (strcmp(comando, "aggiungi-auto") == 0) {
             unsigned int distanza = 0, autonomia = 0;
             (assert(scanf("%u %u", &distanza, &autonomia)));
-            insMacchina(&testa, &coda, distanza, autonomia);
+            insMacchina(stazioni, numStazioni, distanza, autonomia);
         } else if (strcmp(comando, "rottama-auto") == 0) {
             unsigned int distanza = 0, autonomia = 0;
             (assert(scanf("%u %u", &distanza, &autonomia)));
-            delMacchina(&testa, &coda, distanza, autonomia);
+            delMacchina(stazioni, numStazioni, distanza, autonomia);
         } else if (strcmp(comando, "pianifica-percorso") == 0) {
             unsigned int origine = 0, destinazione = 0;
             (assert(scanf("%u %u", &origine, &destinazione)));
-            pianificaPercorso(*testa, *coda, origine, destinazione);
+
+            if (destinazione == origine) {
+                printf("%u\n", origine);
+            } else {
+                int indiceDestinazione = binarySearch(stazioni, 0, numStazioni - 1, destinazione);
+                //AGGIUNGI CASO IN TESTA E IN CODA
+                if (destinazione > origine) {
+                    pianificaPercorso(stazioni, numStazioni, origine, destinazione, indiceDestinazione);
+                } else {
+                    BFS(stazioni, numStazioni, indiceDestinazione, origine);
+                    pianificaPercorso(stazioni, numStazioni, origine, destinazione, indiceDestinazione);
+                }
+            }
         } else {
         }
     }
-
-    if (testa == coda) {
-        free(testa);
-    } else {
-        free(testa);
-        free(coda);
-    }
-    free(comando);
     exit(0);
-
 }
 
-void insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int km, unsigned int numMacchine,
+int ricercaPrecedenteBinario(const struct Stazione stazioni[], unsigned int numStazioni, unsigned int kmGenerico) {
+    int sinistra = -1;
+    int destra = numStazioni;
+    int indicePrecedente = -1;
+
+    while (sinistra + 1 < destra) {
+        int medio = (sinistra + destra) / 2;
+        if (stazioni[medio].km < kmGenerico) {
+            sinistra = medio;
+            indicePrecedente = medio;
+        } else {
+            destra = medio;
+        }
+    }
+
+    return indicePrecedente;
+}
+
+int binarySearch(struct Stazione stazioni[], int basso, int alto, int km) {
+    if (alto < basso)
+        return -1;
+    int mid = (basso + alto) / 2;
+    if (km == stazioni[mid].km)
+        return mid;
+    if (km > stazioni[mid].km)
+        return binarySearch(stazioni, (mid + 1), alto, km);
+    return binarySearch(stazioni, basso, (mid - 1), km);
+}
+
+void insStazione(struct Stazione stazioni[], unsigned int *numStazioni, unsigned int km, unsigned int numMacchine,
                  const int macchine[], unsigned int numAuto) {
 
-    struct Stazione *newStazione = NULL;
-    newStazione = malloc(sizeof(struct Stazione));
+    if (binarySearch(stazioni, 0, (*numStazioni) - 1, km) != -1) {
+        printf("non aggiunta\n");
+        return;
+    }
+
+    if (*numStazioni >= 99999999) {
+        printf("non aggiunta\n");
+        return;
+    }
+
+    struct Stazione *newStazione = malloc(sizeof(struct Stazione));
     newStazione->km = km;
     newStazione->numMacchine = numMacchine;
-    newStazione->macchine = NULL;
     newStazione->macchine = malloc(toAlloc(numAuto) * sizeof(int));
     for (int i = 0; i < numAuto; i++) {
         (newStazione->macchine[i] = macchine[i]);
@@ -109,119 +144,55 @@ void insStazione(struct Stazione **testa, struct Stazione **coda, unsigned int k
     if (numAuto > 0) {
         qsort(newStazione->macchine, numMacchine, sizeof(int), funzCompare);
     }
-    newStazione->next = NULL;
-    newStazione->prev = NULL;
 
-    if (*testa == NULL) {
-        *testa = newStazione;
-        *coda = newStazione;
+    if (*numStazioni == 0) {
+        stazioni[(*numStazioni)++] = *newStazione;
         printf("aggiunta\n");
         return;
-    } else if ((*testa)->km > newStazione->km) {
-        newStazione->next = *testa;
-        newStazione->next->prev = newStazione;
-        *testa = newStazione;
+    } else if (stazioni[0].km > km) {
+        for (int i = ((int) *numStazioni); i > 0; i--) {
+            stazioni[i] = stazioni[i - 1];
+        }
+        stazioni[0] = *newStazione;
+        (*numStazioni)++;
         printf("aggiunta\n");
-    } else if ((*testa)->km == km) {
-        printf("non aggiunta\n");
-        free(newStazione);
+        return;
+    } else if (stazioni[*numStazioni - 1].km < km) {
+        stazioni[(*numStazioni)++] = *newStazione;
+        printf("aggiunta\n");
         return;
     } else {
-        struct Stazione *temp = NULL;
-        temp = *testa;
-
-        if (temp->km == km && ((*testa) == (*coda))) {
-            printf("non aggiunta\n");
-            free(newStazione);
-            return;
+        int i = ricercaPrecedenteBinario(stazioni, *numStazioni, km);
+        for (int j = (*numStazioni) - 1; j > i; --j) {
+            stazioni[j + 1] = stazioni[j];
         }
-
-        while (temp->next != NULL && temp->next->km < newStazione->km) {
-            temp = temp->next;
-        }
-        if (temp->next != NULL && temp->next->km == newStazione->km) {
-            printf("non aggiunta\n");
-            free(newStazione);
-        } else {
-            newStazione->next = temp->next;
-
-            if (newStazione->next != NULL) {
-                newStazione->next->prev = newStazione;
-            } else {
-                *coda = newStazione;
-            }
-            temp->next = newStazione;
-            newStazione->prev = temp;
-            printf("aggiunta\n");
-
-        }
+        stazioni[i + 1] = *newStazione;
+        (*numStazioni)++;
+        printf("aggiunta\n");
+        return;
     }
-    newStazione = malloc(sizeof(struct Stazione));
-    free(newStazione);
 }
 
-
-void delStazione(struct Stazione **testa, struct Stazione **coda, unsigned int km) {
-
-    if ((*coda) == NULL || (*testa) == NULL) {
-        printf("non demolita\n");
-        return;
-    } else if ((*testa)->km > km) {
-        printf("non demolita\n");
-        return;
-    } else if ((*coda)->km < km) {
+void delStazione(struct Stazione stazioni[], unsigned int *numStazioni, unsigned int km) {
+    if (*numStazioni == 0) {
         printf("non demolita\n");
         return;
     }
 
-    unsigned int demolito = 0;
-    struct Stazione *del_stazione = NULL;
-    del_stazione = malloc(sizeof(struct Stazione));
-    del_stazione->next = NULL;
-    del_stazione->prev = NULL;
+    int pos = binarySearch(stazioni, 0, (*numStazioni) - 1, km);
 
-    if ((*testa) == (*coda)) {
-        *testa = NULL;
-        *coda = NULL;
-        free(del_stazione);
-        printf("demolita\n");
-        return;
-    } else if ((*testa)->next != NULL && (*testa)->km == km) {
-        (*testa)->next->prev = NULL;
-        *testa = (*testa)->next;
-        demolito = 1;
-    } else if ((*coda)->km == km) {
-        (*coda)->prev->next = NULL;
-        *coda = (*coda)->prev;
-        demolito = 1;
-    }
-
-    if (demolito == 0) {
-
-        del_stazione = *testa;
-
-        while (del_stazione->next != NULL && demolito == 0) {
-            del_stazione = del_stazione->next;
-            if (del_stazione->km == km) {
-                demolito = 1;
-            }
-        }
-    }
-
-    if (*testa == NULL || demolito == 0) {
+    if (pos == -1) {
         printf("non demolita\n");
         return;
     }
 
-    if (del_stazione->next != NULL) {
-        del_stazione->next->prev = del_stazione->prev;
-    }
-    if (del_stazione->prev != NULL)
-        del_stazione->prev->next = del_stazione->next;
+    int i;
+    for (i = pos; i < (*numStazioni) - 1; i++)
+        stazioni[i] = stazioni[i + 1];
 
+    (*numStazioni)--;
     printf("demolita\n");
-    del_stazione = malloc(sizeof(struct Stazione));
-    free(del_stazione);
+    return;
 }
 
 int toAlloc(unsigned int numMacchine) {
@@ -240,142 +211,114 @@ int toAlloc(unsigned int numMacchine) {
     }
 }
 
-void insMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int km, unsigned int autonomia) {
-    if (*testa == NULL) {
-        printf("non aggiunta\n");
-        return;
-    }
-    if ((*testa)->km > km) {
-        printf("non aggiunta\n");
-        return;
-    }
-    if ((*coda)->km < km) {
+void insMacchina(struct Stazione stazioni[], unsigned int numStazioni, unsigned int km, unsigned int autonomia) {
+    if (numStazioni == 0) {
         printf("non aggiunta\n");
         return;
     }
 
-    struct Stazione *stazione;
-    stazione = (*testa);
+    int pos = binarySearch(stazioni, 0, numStazioni - 1, km);
 
-    while (stazione->next != NULL) {
-        if (stazione->km == km) {
-            break;
-        }
-        stazione = stazione->next;
-    }
-
-    if ((stazione == *coda) && stazione->km != km) {
-        printf("non aggiunta\n");
-        return;
-    } else {
-        if (stazione->numMacchine < 512) {
-            switch (stazione->numMacchine + 1) {
-                case 25:
-                    stazione->macchine = realloc(stazione->macchine, 60 * sizeof(int));
-                    break;
-                case 60:
-                    stazione->macchine = realloc(stazione->macchine, 125 * sizeof(int));
-                    break;
-                case 125:
-                    stazione->macchine = realloc(stazione->macchine, 200 * sizeof(int));
-                    break;
-                case 200:
-                    stazione->macchine = realloc(stazione->macchine, 300 * sizeof(int));
-                    break;
-                case 300:
-                    stazione->macchine = realloc(stazione->macchine, 425 * sizeof(int));
-                    break;
-                case 425:
-                    stazione->macchine = realloc(stazione->macchine, 512 * sizeof(int));
-                    break;
-                default:
-                    break;
-            }
-
-            int posizioneInserimento = (int) stazione->numMacchine;
-            while (posizioneInserimento > 0 && stazione->macchine[posizioneInserimento - 1] > autonomia) {
-                stazione->macchine[posizioneInserimento] = stazione->macchine[posizioneInserimento - 1];
-                posizioneInserimento--;
-            }
-            stazione->macchine[posizioneInserimento] = (int) autonomia;
-            stazione->numMacchine++;
-
-            printf("aggiunta\n");
-        } else {
+    if (pos != -1) {
+        if (stazioni[pos].numMacchine >= 512) {
             printf("non aggiunta\n");
             return;
         }
-    }
-    stazione = malloc(sizeof(struct Stazione));
-    free(stazione);
-}
-
-void delMacchina(struct Stazione **testa, struct Stazione **coda, unsigned int km, unsigned int autonomia) {
-    if ((*testa)->km > km) {
-        printf("non rottamata\n");
-        return;
-    }
-    if ((*coda)->km < km) {
-        printf("non rottamata\n");
-        return;
-    }
-
-    struct Stazione *stazione;
-    stazione = (*testa);
-
-    while (stazione->next != NULL) {
-        if (stazione->km == km) {
-            break;
+        switch (stazioni[pos].numMacchine + 1) {
+            case 25:
+                stazioni[pos].macchine = realloc(stazioni[pos].macchine, 60 * sizeof(int));
+                break;
+            case 60:
+                stazioni[pos].macchine = realloc(stazioni[pos].macchine, 125 * sizeof(int));
+                break;
+            case 125:
+                stazioni[pos].macchine = realloc(stazioni[pos].macchine, 200 * sizeof(int));
+                break;
+            case 200:
+                stazioni[pos].macchine = realloc(stazioni[pos].macchine, 300 * sizeof(int));
+                break;
+            case 300:
+                stazioni[pos].macchine = realloc(stazioni[pos].macchine, 425 * sizeof(int));
+                break;
+            case 425:
+                stazioni[pos].macchine = realloc(stazioni[pos].macchine, 512 * sizeof(int));
+                break;
+            default:
+                break;
         }
-        stazione = stazione->next;
-    }
-    if ((stazione == *coda) && stazione->km != km) {
-        printf("non rottamata\n");
+        int posizioneInserimento = stazioni[pos].numMacchine;
+        while (posizioneInserimento > 0 && stazioni[pos].macchine[posizioneInserimento - 1] > autonomia) {
+            stazioni[pos].macchine[posizioneInserimento] = stazioni[pos].macchine[posizioneInserimento - 1];
+            posizioneInserimento--;
+        }
+        stazioni[pos].macchine[posizioneInserimento] = (int) autonomia;
+        stazioni[pos].numMacchine++;
+        printf("aggiunta\n");
         return;
     } else {
-        int *temp = stazione->macchine;
-        int rottamed = 0;
-        for (int i = 0; i < stazione->numMacchine; ++i) {
-            if (temp[i] == autonomia) {
-                for (int j = i; j < stazione->numMacchine - 1; ++j) {
-                    temp[j] = temp[j + 1];
+        printf("non aggiunta\n");
+        return;
+    }
+
+}
+
+
+void delMacchina(struct Stazione stazioni[], unsigned int numStazioni, unsigned int km, unsigned int autonomia) {
+    if (numStazioni == 0) {
+        printf("non rottamata\n");
+        return;
+    }
+
+    int pos = binarySearch(stazioni, 0, numStazioni - 1, km);
+
+    if (pos != -1) {
+        int *macchine = stazioni[pos].macchine;
+        bool rottamed = false;
+        for (int j = 0; j < stazioni[pos].numMacchine; ++j) {
+            if (macchine[j] == autonomia) {
+                for (int k = j; k < stazioni[pos].numMacchine - 1; ++k) {
+                    macchine[k] = macchine[k + 1];
                 }
-                temp[stazione->numMacchine - 1] = 0;
-                stazione->numMacchine--;
+                macchine[stazioni[pos].numMacchine - 1] = 0;
+                stazioni[pos].numMacchine--;
                 printf("rottamata\n");
-                rottamed = 1;
-                break;
+                rottamed = true;
+                return;
             }
         }
         if (rottamed == 0) {
             printf("non rottamata\n");
+            return;
         }
+    } else {
+        printf("non rottamata\n");
+        return;
     }
 }
 
-int pianificaRicorsivoDiretto(struct Stazione stazione, unsigned int origine) {
+int pianificaRicorsivoDiretto(struct Stazione stazioni[], unsigned int numStazioni, unsigned int indiceStazione,
+                              unsigned int origine) {
     int corretto = 1;
-    if (stazione.km != origine) {
-        unsigned int destinazione = stazione.km;
-        struct Stazione *temp = stazione.prev;
-        while (temp->km >= origine) {
-            if ((temp->km + temp->macchine[temp->numMacchine - 1]) >= destinazione) {
-                stazione = *temp;
+    if (stazioni[indiceStazione].km != origine) {
+        unsigned int destinazione = stazioni[indiceStazione].km;
+        int indiceTemp = indiceStazione - 1;
+        struct Stazione temp = stazioni[indiceTemp];
+        while (temp.km >= origine) {
+            if ((temp.km + temp.macchine[temp.numMacchine - 1]) >= destinazione) {
+                indiceStazione = indiceTemp;
             }
-            temp = temp->prev;
-            if (temp == NULL) {
+            indiceTemp--;
+            if (indiceTemp < 0) {
                 break;
             }
+            temp = stazioni[indiceTemp];
         }
-        if (stazione.km == destinazione) {
+        if (stazioni[indiceStazione].km == destinazione) {
             return -1;
         }
-        corretto *= pianificaRicorsivoDiretto(stazione, origine);
+        corretto *= pianificaRicorsivoDiretto(stazioni, numStazioni, indiceStazione, origine);
         if (corretto == 0) {
-            printf("%u ", stazione.km);
-        }
-        while (temp != NULL) {
-            temp = temp->prev;
+            printf("%u ", stazioni[indiceStazione].km);
         }
         return corretto;
     } else {
@@ -383,116 +326,90 @@ int pianificaRicorsivoDiretto(struct Stazione stazione, unsigned int origine) {
     }
 }
 
-void pianificaPercorso(const struct Stazione testa, const struct Stazione coda, unsigned int origine,
-                       unsigned int destinazione) {
+void pianificaPercorso(struct Stazione stazioni[], unsigned int numStazioni, unsigned int origine,
+                       unsigned int destinazione, int indiceDestinazione) {
 
-    if (destinazione == origine) {
-        printf("%u\n", origine);
-    } else if (destinazione > origine) {
-        struct Stazione *temp = NULL;
-        temp = malloc(sizeof(struct Stazione));
-        *temp = coda;
+    if (destinazione > origine) {
 
-        while (temp != NULL) {
-            if (temp->km == destinazione) {
-                break;
-            }
-            temp = temp->prev;
-        }
-
-        (pianificaRicorsivoDiretto(*temp, origine) == 0) ? (printf("%u\n", temp->km)) : (printf(
+        (pianificaRicorsivoDiretto(stazioni, numStazioni, indiceDestinazione, origine) == 0) ? (printf("%u\n",
+                                                                                                       stazioni[indiceDestinazione].km))
+                                                                                             : (printf(
                 "nessun percorso\n"));
     } else {
-        struct Stazione *stazSorgente = NULL;
-        stazSorgente = malloc(sizeof(struct Stazione));
-        struct Stazione *stazDestinazione = NULL;
-        stazDestinazione = malloc(sizeof(struct Stazione));
-        *stazSorgente = testa;
-        *stazDestinazione = coda;
-        while (stazSorgente != NULL) {
-            if (stazSorgente->km == origine) {
-                break;
-            }
-            stazSorgente = stazSorgente->next;
-        }
-        while (stazDestinazione != NULL) {
-            if (stazDestinazione->km == destinazione) {
-                break;
-            }
-            stazDestinazione = stazDestinazione->prev;
-        }
+        unsigned int stazSorgente = binarySearch(stazioni, 0, numStazioni - 1, origine);
+        unsigned int stazDestinazione = binarySearch(stazioni, 0, numStazioni - 1, destinazione);
 
-        BFS(stazDestinazione, stazDestinazione, origine, destinazione);
         unsigned int tappe[1000];
         unsigned int numTappe = 0;
         unsigned int *poNumTappe = &numTappe;
-
-
-        if (stampaPercorso(*stazSorgente, *stazDestinazione, tappe, poNumTappe)) {
+        if (stampaPercorso(stazioni, numStazioni, stazSorgente, stazDestinazione, tappe, poNumTappe)) {
             for (int i = numTappe - 1; i > 0; --i) {
                 printf("%u ", tappe[i]);
             }
             printf("%u\n", tappe[0]);
         }
-
+        /*for (int i = 0; i < numStazioni; ++i) {
+            printf("%u %u\n", stazioni[i].km, stazioni[i].macchine[stazioni[i].numMacchine - 1]);
+        }*/
     }
 }
 
-void BFS(struct Stazione *testa, struct Stazione *stazDestinazione, unsigned int origine, unsigned int destinazione) {
+void BFS(struct Stazione stazioni[], unsigned int numStazioni, unsigned int indiceDestinazione, unsigned int origine) {
 
-    struct Stazione *stazione = testa;
-
-    while (stazione != NULL) {
-        stazione->visited = false;
-        stazione->distanza = 0;
-        stazione->prevBFS = NULL;
-        stazione = stazione->next;
-
+    for (int j = 0; j < numStazioni; ++j) {
+        stazioni[j].visited = false;
+        stazioni[j].distanza = 0;
+        stazioni[j].prevBFS = -1;
+        stazioni[j].proprioIndice = j;
     }
 
-    stazione = testa;
-
-    struct Stazione **queue = malloc(sizeof(struct Stazione) * 30000);
+    struct Stazione queue[30000];
     int fronte = 0, retro = 0;
 
-    queue[retro++] = stazione;
+    queue[retro++] = stazioni[indiceDestinazione];
 
     while (fronte < retro) {
-        struct Stazione *analized = queue[fronte++];
-        struct Stazione *temp = analized->next;
+        struct Stazione *analized = &queue[fronte++];
+        int indiceTemp = (int) (analized->proprioIndice + 1);
 
-        while (temp != NULL) {
-
-            if (temp->numMacchine > 0) {
-                if (((int) (temp->km)) - ((int) (temp->macchine[temp->numMacchine - 1])) <=
+        while (indiceTemp < numStazioni && analized->proprioIndice < numStazioni) {
+            if (stazioni[indiceTemp].numMacchine > 0 && stazioni[indiceTemp].km <= origine) {
+                if (((int) (stazioni[indiceTemp].km)) -
+                    ((int) (stazioni[indiceTemp].macchine[stazioni[indiceTemp].numMacchine - 1])) <=
                     (int) (analized->km)) {
-                    if (!temp->visited) {
-                        temp->visited = true;
-                        temp->distanza = analized->distanza + 1;
-                        temp->prevBFS = analized;
+                    if (!stazioni[indiceTemp].visited) {
+                        stazioni[indiceTemp].visited = true;
+                        stazioni[indiceTemp].distanza = analized->distanza + 1;
+                        stazioni[indiceTemp].prevBFS = (int) (analized->proprioIndice);
                         if (retro < 30000) {
-                            queue[retro++] = temp;
+                            queue[retro++] = stazioni[indiceTemp];
                         }
                     }
                 }
+            } else {
+                if (stazioni[indiceTemp].km > origine) {
+                    indiceTemp = (int) numStazioni;
+                    break;
+                }
             }
-            temp = temp->next;
+            indiceTemp++;
         }
         analized->visited = true;
     }
 
+
 }
 
-bool
-stampaPercorso(struct Stazione sorgente, struct Stazione destinazione, unsigned int tappe[], unsigned int *numTappe) {
-    if (sorgente.km == destinazione.km) {
-        tappe[(*numTappe)++] = sorgente.km;
+bool stampaPercorso(struct Stazione stazioni[], unsigned int numStazioni, unsigned sorgente,
+                    unsigned int destinazione, unsigned int tappe[], unsigned int *numTappe) {
+    if (stazioni[sorgente].km == stazioni[destinazione].km) {
+        tappe[(*numTappe)++] = stazioni[sorgente].km;
         return true;
-    } else if (sorgente.prevBFS == NULL) {
+    } else if (stazioni[sorgente].prevBFS == -1) {
         printf("nessun percorso\n");
         return false;
-    } else if (stampaPercorso(*(sorgente.prevBFS), destinazione, tappe, numTappe)) {
-        tappe[(*numTappe)++] = sorgente.km;
+    } else if (stampaPercorso(stazioni, numStazioni, stazioni[sorgente].prevBFS, destinazione, tappe, numTappe)) {
+        tappe[(*numTappe)++] = stazioni[sorgente].km;
         return true;
     } else {
         return false;
